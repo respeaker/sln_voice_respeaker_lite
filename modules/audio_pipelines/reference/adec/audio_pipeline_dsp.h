@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include "app_conf.h"
+#include "aec_telemetry.h"
 
 /* Pipeline config */
 #define AP_MAX_Y_CHANNELS (2)
@@ -34,6 +35,30 @@ typedef struct {
     float_s32_t max_ref_energy;
     float_s32_t aec_corr_factor;
     int32_t ref_active_flag;
+    uint32_t ref_probe_peak[2];
+    uint32_t ref_probe_num_x_channels;
+    uint32_t ref_probe_direct_activity;
+    uint32_t ref_probe_aec_shared_activity;
+    ffva_aec_adaptation_t adaptation_probe;
+    uint32_t adaptation_probe_valid;
+    uint32_t aec_residual_power;
+    uint32_t aec_input_power[2];
+    uint32_t aec_residual_power_per_mic[2];
+    uint32_t aec_subtraction_power[2];
+    int32_t adec_applied_delay_samples;
+    int32_t adec_measured_delay_samples;
+    uint32_t adec_mode;
+    uint32_t adec_estimator_enabled;
+    uint32_t adec_force_cycle_pending;
+    int32_t debug_current_peak_phase;
+    uint32_t debug_current_peak_ratio_x100;
+    int32_t debug_accepted_peak_phase;
+    uint32_t debug_accepted_peak_ratio_x100;
+    uint32_t debug_adaptation_mode;
+    uint32_t debug_core_bypass;
+    int32_t debug_shadow_flag;
+    uint32_t debug_mu_active;
+    int32_t debug_mu_coh_timer;
 } frame_data_t;
 
 typedef struct ic_stage_ctx {

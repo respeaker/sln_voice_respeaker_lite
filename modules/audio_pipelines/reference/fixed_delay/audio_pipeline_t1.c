@@ -31,6 +31,16 @@ static stage_delay_ctx_t DWORD_ALIGNED delay_buf_state = {};
 #endif
 static aec_ctx_t DWORD_ALIGNED aec_state = {};
 
+static uint32_t pcm16_power(const int32_t *samples)
+{
+    uint64_t sum = 0;
+    for (size_t i = 0; i < appconfAUDIO_PIPELINE_FRAME_ADVANCE; ++i) {
+        const int64_t sample = samples[i] >> 16;
+        sum += sample * sample;
+    }
+    return (uint32_t)(sum / appconfAUDIO_PIPELINE_FRAME_ADVANCE);
+}
+
 
 static void *audio_pipeline_input_i(void *input_app_data)
 {
@@ -127,6 +137,7 @@ static void stage_aec(frame_data_t *frame_data)
     frame_data->ref_active_flag = aec_state.aec_state.shared_state.ref_active_flag;
     memcpy(frame_data->samples, stage1_output, AEC_MAX_Y_CHANNELS * appconfAUDIO_PIPELINE_FRAME_ADVANCE * sizeof(int32_t));
 #endif
+    frame_data->aec_residual_power = pcm16_power(frame_data->samples[0]);
 }
 
 static void initialize_pipeline_stages(void)

@@ -24,6 +24,7 @@
 #include "app_conf.h"
 #include "audio_pipeline.h"
 #include "audio_pipeline_dsp.h"
+#include "aec_telemetry.h"
 
 #if appconfAUDIO_PIPELINE_FRAME_ADVANCE != 240
 #error This pipeline is only configured for 240 frame advance
@@ -33,6 +34,50 @@
 static ic_stage_ctx_t DWORD_ALIGNED ic_stage_state = {};
 static ns_stage_ctx_t DWORD_ALIGNED ns_stage_state = {};
 static agc_stage_ctx_t DWORD_ALIGNED agc_stage_state = {};
+
+// Reduce each 15 ms frame to PCM16 power, then average ten frames for a
+// 150 ms snapshot. The raw mic and reference are retained in frame_data.
+static uint32_t pcm16_power(const int32_t *samples)
+{
+    uint64_t sum = 0;
+    for (size_t i = 0; i < appconfAUDIO_PIPELINE_FRAME_ADVANCE; ++i) {
+        const int64_t sample = samples[i] >> 16;
+        sum += sample * sample;
+    }
+    return (uint32_t)(sum / appconfAUDIO_PIPELINE_FRAME_ADVANCE);
+}
+
+static void update_aec_telemetry(frame_data_t *frame_data, uint32_t residual_power)
+{
+    static uint64_t power_sums[4];
+    static uint32_t frames;
+    static uint32_t reference_active;
+    static uint32_t frame_counter;
+
+    const uint32_t ref_0 = pcm16_power(frame_data->aec_reference_audio_samples[0]);
+    const uint32_t ref_1 = pcm16_power(frame_data->aec_reference_audio_samples[1]);
+    power_sums[0] += ref_0 > ref_1 ? ref_0 : ref_1;
+    power_sums[1] += pcm16_power(frame_data->mic_samples_passthrough[0]);
+    power_sums[2] += residual_power;
+    power_sums[3] += pcm16_power(frame_data->samples[0]);
+    reference_active |= frame_data->ref_active_flag != 0;
+    ++frames;
+    if (frames == 10) {
+        ffva_aec_telemetry_t snapshot = {
+            .reference_power = (uint32_t)(power_sums[0] / frames),
+            .microphone_power = (uint32_t)(power_sums[1] / frames),
+            .residual_power = (uint32_t)(power_sums[2] / frames),
+            .output_power = (uint32_t)(power_sums[3] / frames),
+            .reference_active = reference_active,
+            .frame_counter = frame_counter + frames,
+        };
+        ffva_aec_telemetry_update(&snapshot);
+        frame_counter += frames;
+        memset(power_sums, 0, sizeof(power_sums));
+        reference_active = 0;
+        frames = 0;
+    }
+}
 
 static void *audio_pipeline_input_i(void *input_app_data)
 {
@@ -101,6 +146,7 @@ static void stage_ns(frame_data_t *frame_data)
 
 static void stage_agc(frame_data_t *frame_data)
 {
+    const uint32_t residual_power = frame_data->aec_residual_power;
 #if appconfAUDIO_PIPELINE_SKIP_AGC
 #else
     int32_t DWORD_ALIGNED agc_output[appconfAUDIO_PIPELINE_FRAME_ADVANCE];
@@ -118,6 +164,7 @@ static void stage_agc(frame_data_t *frame_data)
             &agc_stage_state.md);
     memcpy(frame_data->samples, agc_output, appconfAUDIO_PIPELINE_FRAME_ADVANCE * sizeof(int32_t));
 #endif
+    update_aec_telemetry(frame_data, residual_power);
 }
 
 static void initialize_pipeline_stages(void)
@@ -126,7 +173,11 @@ static void initialize_pipeline_stages(void)
 
     ns_init(&ns_stage_state.state);
 
+#if defined(appconfFFVA_AGC_FIXED_GAIN_25) && appconfFFVA_AGC_FIXED_GAIN_25
+    agc_init(&agc_stage_state.state, &AGC_PROFILE_FIXED_GAIN);
+#else
     agc_init(&agc_stage_state.state, &AGC_PROFILE_ASR);
+#endif
     agc_stage_state.md = agc_meta_data_init();
 }
 

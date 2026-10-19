@@ -41,6 +41,7 @@ typedef struct {
     float_s32_t max_ref_energy;
     float_s32_t aec_corr_factor;
     int32_t ref_active_flag;
+    uint32_t aec_residual_power; // PCM16 mean-square before IC, NS, and AGC.
 } frame_data_t;
 
 typedef struct stage_delay_ctx {
