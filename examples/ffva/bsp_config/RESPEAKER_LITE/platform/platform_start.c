@@ -20,6 +20,7 @@
 #include "device_control_i2c.h"
 
 extern void i2s_rate_conversion_enable(void);
+extern void i2s_restart_callback_enable(void);
 
 #if ON_TILE(0)
 static void gpo_update(uint32_t mask, int set)
@@ -41,10 +42,12 @@ static void amplifier_disable(void)
     gpo_update(PIN_AMP_EN_OUT, 0);
 }
 
+#if appconfSPEAKER_AMP_ENABLED
 static void amplifier_enable(void)
 {
     gpo_update(PIN_AMP_EN_OUT, 1);
 }
+#endif
 #endif
 
 static void gpio_start(void)
@@ -144,6 +147,9 @@ static void i2s_start(void)
 #if appconfI2S_MODE == appconfI2S_MODE_MASTER
     rtos_i2s_rpc_config(i2s_ctx, appconfI2S_RPC_PORT, appconfI2S_RPC_PRIORITY);
 #endif
+#if ON_TILE(I2S_TILE_NO) && appconfRECOVER_MCLK_I2S_APP_PLL
+    i2s_restart_callback_enable();
+#endif
 #if ON_TILE(I2S_TILE_NO)
     if (appconfI2S_AUDIO_SAMPLE_RATE == 3*appconfAUDIO_PIPELINE_SAMPLE_RATE) {
         i2s_rate_conversion_enable();
@@ -188,7 +194,7 @@ void platform_start(void)
     i2s_start();
     usb_start();
     uart_start();
-#if ON_TILE(0)
+#if ON_TILE(0) && appconfSPEAKER_AMP_ENABLED
     amplifier_enable();
 #endif
     // I2C slave can be started only after i2c_master_start() is completed
