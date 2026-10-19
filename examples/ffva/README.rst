@@ -4,6 +4,9 @@ Far-field Voice Assistant
 
 This is the far-field voice assistant example design firmware.  See the full documentation for more information on configuring, modifying, building, and running the firmware.
 
+The experimental ReSpeaker Lite I2S/ESP32 ADEC build has separate
+`build and safety notes <RESPEAKER_LITE_I2S.md>`_.
+
 Supported Hardware and pre-requisites
 =====================================
 
