@@ -5,7 +5,7 @@
 #include "servicer.h"
 
 #define DFU_CONTROLLER_SERVICER_RESID   (240)
-#define NUM_RESOURCES_DFU_SERVICER      (1) // DFU servicer
+#define NUM_RESOURCES_DFU_SERVICER      (2) // DFU plus read-only AEC telemetry
 
 /**
  * @brief DFU servicer task.

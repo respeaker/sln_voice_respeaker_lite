@@ -248,12 +248,19 @@ static void i2s_init(void)
 #if ON_TILE(I2S_TILE_NO)
 #if appconfI2S_MODE == appconfI2S_MODE_MASTER
     rtos_intertile_t *client_intertile_ctx[1] = {intertile_ctx};
+#if appconfFFVA_INT_XMOS_CLOCK_MASTER
+    // ReSpeaker wiring is unchanged from slave mode: I2S_MIC_DATA drives
+    // ESP32 GPIO43; I2S_DATA_IN receives playback from ESP32 GPIO44.
+    port_t p_i2s_dout[1] = { PORT_I2S_ADC_DATA };
+    port_t p_i2s_din[1] = { PORT_I2S_DAC_DATA };
+#else
     port_t p_i2s_dout[1] = {
             PORT_I2S_DAC_DATA
     };
     port_t p_i2s_din[1] = {
             PORT_I2S_ADC_DATA
     };
+#endif
 
     rtos_i2s_master_init(
             i2s_ctx,

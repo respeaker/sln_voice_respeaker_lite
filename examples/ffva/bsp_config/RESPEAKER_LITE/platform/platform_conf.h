@@ -105,6 +105,11 @@
 #define appconfI2C_DFU_ENABLED    0
 #endif /* appconfI2C_DFU_ENABLED */
 
+// FFVA-INT overrides this to 0 for its first routing/clock retest.
+#ifndef appconfSPEAKER_AMP_ENABLED
+#define appconfSPEAKER_AMP_ENABLED 1
+#endif /* appconfSPEAKER_AMP_ENABLED */
+
 #ifndef APP_CONTROL_TRANSPORT_COUNT
 #define APP_CONTROL_TRANSPORT_COUNT appconfI2C_DFU_ENABLED
 #endif // APP_CONTROL_TRANSPORT_COUNT

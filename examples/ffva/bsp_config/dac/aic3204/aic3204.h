@@ -18,13 +18,16 @@
 #define AIC3204_CLK_PLL3      0x06 // Register 6  - Clock Setting Register 3, J values
 #define AIC3204_NDAC          0x0B // Register 11 - NDAC Divider Value
 #define AIC3204_MDAC          0x0C // Register 12 - MDAC Divider Value
+#define AIC3204_DOSR_MSB      0x0D // Register 13 - DOSR Divider Value (MSB)
 #define AIC3204_DOSR          0x0E // Register 14 - DOSR Divider Value (LS Byte)
 #define AIC3204_NADC          0x12 // Register 18 - NADC Divider Value
 #define AIC3204_MADC          0x13 // Register 19 - MADC Divider Value
 #define AIC3204_AOSR          0x14 // Register 20 - AOSR Divider Value
 #define AIC3204_CODEC_IF      0x1B // Register 27 - CODEC Interface Control
-#define AIC3204_AUDIO_IF_4    0x36 // Register 54 - Audio Interface Setting Register 4
+#define AIC3204_AUDIO_IF_4    0x1F // Register 31 - Audio Interface Setting Register 4
 #define AIC3204_AUDIO_IF_5    0x20 // Register 32 - Audio Interface Setting Register 5
+#define AIC3204_DIN_PIN_FUNC  0x36 // Register 54 - DIN/MFP1 pin function
+#define AIC3204_SCLK_PIN_FUNC 0x38 // Register 56 - SCLK/MFP3 pin function
 #define AIC3204_DAC_SIG_PROC  0x3C // Register 60 - DAC Sig Processing Block Control
 #define AIC3204_ADC_SIG_PROC  0x3D // Register 61 - ADC Sig Processing Block Control
 #define AIC3204_DAC_CH_SET1   0x3F // Register 63 - DAC Channel Setup 1

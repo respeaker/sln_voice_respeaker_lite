@@ -28,19 +28,35 @@ int aic3204_init(void)
 
 		// Default is CODEC_CLKIN is from MCLK pin. Do not need to change this.
 #if RESPEAKER_LITE
-        // ReSpeaker Lite uses 24.576 MHz MCLK with a 16 kHz DAC sample rate.
+        // The USB build retains its 24.576 MHz / 16 kHz codec clock plan.
+#if appconfUSB_ENABLED
         aic3204_reg_write(AIC3204_NDAC, 0x82) == 0 &&
         aic3204_reg_write(AIC3204_MDAC, 0x86) == 0 &&
+#elif appconfFFVA_INT_XMOS_CLOCK_MASTER
+        // XMOS drives the shared 24.576 MHz MCLK. Keep 48 kHz DAC output:
+        // 24.576 MHz / (2 * 2 * 128) = 48 kHz.
+        aic3204_reg_write(AIC3204_NDAC, 0x82) == 0 &&
+        aic3204_reg_write(AIC3204_MDAC, 0x82) == 0 &&
+#else
+        // FFVA-INT is clocked by the ESP32: 12.288 MHz MCLK, 48 kHz LRCLK.
+        // DAC_FS = MCLK / (NDAC * MDAC * DOSR) = 12.288 MHz / 256.
+        aic3204_reg_write(AIC3204_NDAC, 0x81) == 0 &&
+        aic3204_reg_write(AIC3204_MDAC, 0x82) == 0 &&
+#endif
+        aic3204_reg_write(AIC3204_DOSR_MSB, 0x00) == 0 &&
         aic3204_reg_write(AIC3204_DOSR, 0x80) == 0 &&
         // I2S, 32 bits, slave mode, DOUT always driving.
         aic3204_reg_write(AIC3204_CODEC_IF, 0x30) == 0 &&
 #if appconfUSB_ENABLED
-        aic3204_reg_write(AIC3204_AUDIO_IF_4, 0x02) == 0 &&
+        aic3204_reg_write(AIC3204_DIN_PIN_FUNC, 0x02) == 0 &&
         aic3204_reg_write(AIC3204_AUDIO_IF_5, 0x00) == 0 &&
 #else
-        aic3204_reg_write(0x38, 0x02) == 0 &&
-        aic3204_reg_write(0x1F, 0x01) == 0 &&
-        aic3204_reg_write(AIC3204_AUDIO_IF_5, 0x01) == 0 &&
+        // GPIO44 feeds DIN/MFP1. SCLK/MFP3 is wired to the XMOS I2S output
+        // (GPIO43): selecting it as codec DIN creates mic-to-speaker feedback.
+        aic3204_reg_write(AIC3204_DIN_PIN_FUNC, 0x02) == 0 &&
+        aic3204_reg_write(AIC3204_SCLK_PIN_FUNC, 0x00) == 0 &&
+        aic3204_reg_write(AIC3204_AUDIO_IF_4, 0x00) == 0 &&
+        aic3204_reg_write(AIC3204_AUDIO_IF_5, 0x00) == 0 &&
 #endif
 #else
         // Power up NDAC and set to 1
